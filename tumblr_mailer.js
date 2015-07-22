@@ -8,8 +8,10 @@
 var fs = require('fs');
 
 var csvFile = fs.readFileSync("friend_list.csv","utf8");
+var email = fs.readFileSync('email_template.html').toString();
 
-csvParse(csvFile);
+var parsed_data = csvParse(csvFile);
+mergeData(email, parsed_data);
 
 function csvParse(file){
 	var arr = [];
@@ -26,6 +28,22 @@ function csvParse(file){
 		});
 	}
 
-	console.log(arr);
 	return arr;
+}
+
+function mergeData(email, data){
+	var mergedEmail = [];
+	var temp = email;
+	for(var i=0; i<data.length; i++){
+		for(var key in data[i]){
+			temp = temp.replace("{{" + key + "}}", data[i][key]);
+		}
+
+		mergedEmail.push(temp);
+
+	}
+
+	return mergedEmail;
+
+
 }
