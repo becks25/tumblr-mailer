@@ -6,12 +6,21 @@
 */
 
 var fs = require('fs');
+var ejs = require('ejs');
+var tumblr = require('tumblr.js');
 
 var csvFile = fs.readFileSync("friend_list.csv","utf8");
 var email = fs.readFileSync('email_template.html').toString();
 
 var parsed_data = csvParse(csvFile);
-mergeData(email, parsed_data);
+//mergeData(email, parsed_data);
+
+
+
+
+for(var i = 0; i<parsed_data.length; i++){
+	console.log(ejs.render(email,parsed_data[i]));
+}
 
 function csvParse(file){
 	var arr = [];
