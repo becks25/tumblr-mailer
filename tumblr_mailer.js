@@ -11,20 +11,18 @@ var tumblr = require('tumblr.js');
 
 var csvFile = fs.readFileSync("friend_list.csv","utf8");
 var email = fs.readFileSync('email_template.html').toString();
+var emailBottom = fs.readFileSync('email_template_bottom.html').toString();
 
 var parsed_data = csvParse(csvFile);
-//mergeData(email, parsed_data);
 
+var today = Date.now();
+var oneWeek = 604800000;
+var oneWeekAgo = today;
+var completeEmails = [];
 
-
-
-for(var i = 0; i<parsed_data.length; i++){
-	console.log(ejs.render(email,parsed_data[i]));
-}
-
+//parse through the contact list
 function csvParse(file){
 	var arr = [];
-
 	var splitFile = file.split('\n');
 
 	for(var i = 1; i<splitFile.length -1; i++){
@@ -40,19 +38,41 @@ function csvParse(file){
 	return arr;
 }
 
-function mergeData(email, data){
-	var mergedEmail = [];
-	var temp = email;
-	for(var i=0; i<data.length; i++){
-		for(var key in data[i]){
-			temp = temp.replace("{{" + key + "}}", data[i][key]);
+// Authenticate via API Key
+var client = tumblr.createClient({ consumer_key: 'UL8b8cY1B2MCAcRDRDunbNRW0yjGZmpzMcuHu192OI2gEtXJhq' });
+
+// Get info for all posts made in the last week
+client.posts('beckyleedell.tumblr.com', function (err, data) {
+	var posts = [];
+	for(var i = 0; i < data.posts.length; i++){
+		var curr_post = data.posts[i];
+		if(curr_post.timestamp <= oneWeekAgo){
+			posts.push({
+				'href': curr_post.post_url,
+				'title': curr_post.title
+			});
 		}
-
-		mergedEmail.push(temp);
-
 	}
 
-	return mergedEmail;
+	for(var i = 0; i<posts.length; i++){
+		emailBottom = ejs.render(emailBottom, posts[i]);
+	}
+
+	//attach the rendered bottom of the email to the top!
+	email = email + emailBottom;
+
+	//create an array of objects of all the completed info
+	for(var i = 0; i<parsed_data.length; i++){
+		completeEmails.push({
+			'message_html' : ejs.render(email,parsed_data[i]),
+			'to_name': parsed_data[i].firstName,
+			'to_email': parsed_data[i].emailAddress
+		});
+	}
+
+	console.log(completeEmails);
+
+});
 
 
-}
+
